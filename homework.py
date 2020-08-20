@@ -14,14 +14,16 @@ CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 PRACTICUM_API_URL = 'https://praktikum.yandex.ru/api/user_api/{}'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
-BOT = telegram.Bot(token=TELEGRAM_TOKEN)
+bot = telegram.Bot(token=TELEGRAM_TOKEN)
 
 
 def parse_homework_status(homework):
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
+    if (homework_name is None) or (homework_status is None):
+        return 'invalid server response'
 
-    if homework_status == 'rejected':
+    elif homework_status == 'rejected':
         verdict = 'К сожалению в работе нашлись ошибки.'
     else:
         verdict = (
@@ -33,6 +35,8 @@ def parse_homework_status(homework):
 
 def get_homework_statuses(current_timestamp):
     url = PRACTICUM_API_URL.format('homework_statuses/')
+    if current_timestamp is None:
+        current_timestamp = time.time()
     params = {'from_date': current_timestamp}
 
     try:
@@ -43,10 +47,11 @@ def get_homework_statuses(current_timestamp):
         return homework_statuses.json()
     except requests.exceptions.RequestException as err:
         logging.exception(err, "Exception occurred")
+        return {}
 
 
 def send_message(message):
-    return BOT.send_message(chat_id=CHAT_ID, text=message)
+    return bot.send_message(chat_id=CHAT_ID, text=message)
 
 
 def main():
